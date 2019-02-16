@@ -26,8 +26,10 @@ class TextBuffer
         //! \brief Inserts substring at end of current string
         void appendSubstring(std::string subString);
         //! \brief Erase n characters starting from selected index
+        //! Handles deletion lengths greater than the remaining string size
         void eraseCharacters(unsigned deletionIndex, unsigned deletionLength);
-        //! \brief Erase n characters from end of string
+        //! \brief Erase n characters from end of string.
+        //! If the deletion length is greater than the string size, clears the string
         void eraseTrailingCharacters(unsigned deletionLength);
         //! \brief Finds first instance of a substring within a string, replaces with second string
         //! Does nothing if string to substitute does not exist.

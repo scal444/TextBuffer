@@ -86,7 +86,14 @@ void TextBuffer::eraseCharacters(const unsigned deletionIndex, const unsigned de
 }
 void TextBuffer::eraseTrailingCharacters(const unsigned deletionLength)
 {
-    eraseCharacters(static_cast<unsigned>(text_.size()) - deletionLength, deletionLength);
+    if (deletionLength >= text_.size())
+    {
+        text_.clear();
+    }
+    else
+    {
+        eraseCharacters(static_cast<unsigned>(text_.size()) - deletionLength, deletionLength);
+    }
 }
 void TextBuffer::replaceSubstring(const std::string stringToBeReplaced,
                                   const std::string stringToReplaceWith)
