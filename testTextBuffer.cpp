@@ -3,57 +3,9 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 #include "TextBuffer.h"
-#include <stdio.h>
-#include <cstdio>
+#include "bufferUtils.h"
 
-// -----------------------------------------------------------------------------------
-// utility functions for tests
-// -----------------------------------------------------------------------------------
 
-// Create a file for testing load functionality
-// TODO this should be a general testing utility (e.g. testutils.h)
-static void stringToFile(const std::string& fileName, const std::string& fileContent)
-{
-    std::ofstream outStream;
-    outStream.open(fileName);
-    outStream << fileContent;
-    outStream.close();
-}
-
-// wraps file removal functionality
-// TODO this should be a general testing utility (e.g. testutils.h)
-static void removeFile(const std::string& referenceName)
-{
-    std::remove(referenceName.c_str());
-}
-
-// Loads contents of a file to a string
-// TODO this should be a general testing utility (e.g. testutils.h)
-static std::string fileToString(const std::string& fileName)
-{
-    std::ifstream fileStream(fileName);
-    std::stringstream stringStream;
-    stringStream << fileStream.rdbuf();
-    return stringStream.str();
-}
-
-// Compares string content of two files
-// TODO this should be a general testing utility (e.g. testutils.h)
-static bool compareFileContents(const std::string& file1, const std::string& file2)
-{
-    auto string1 = fileToString(file1);
-    auto string2 = fileToString(file2);
-    return (string1 == string2);
-}
-
-// Convenience function to set up a TextBuffer with a specific text content
-static TextBuffer genTextBuffer(const std::string& content)
-{
-    stringToFile("temp.txt", content);
-    TextBuffer buf("temp.txt");
-    removeFile("temp.txt");
-    return buf;
-}
 // -----------------------------------------------------------------------------------
 // Tests for TextBuffer
 // -----------------------------------------------------------------------------------

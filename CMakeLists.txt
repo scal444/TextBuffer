@@ -5,10 +5,10 @@ set(CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -o0")
 
 
-add_executable(TextBufferExample stringutil.cpp exampleUsage.cpp TextBuffer.cpp)
+add_executable(TextBufferExample stringutil.cpp exampleUsage.cpp TextBuffer.cpp bufferUtils.cpp)
 
 enable_testing()
-add_executable(TextBufferTests testTextBuffer.cpp TextBuffer.cpp stringutil.cpp)
+add_executable(TextBufferTests testTextBuffer.cpp TextBuffer.cpp stringutil.cpp bufferUtils.cpp)
 add_test(textbuffertest TextBufferTests)
 
 
