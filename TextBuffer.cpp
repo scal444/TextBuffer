@@ -14,7 +14,7 @@ TextBuffer::TextBuffer(const std::string fileName)
     loadFromText(fileName);
 }
 
-void TextBuffer::insertSubstring(const std::string subString, const unsigned insertionIndex)
+void TextBuffer::insertSubstring(const unsigned insertionIndex, const std::string subString)
 {
     if (insertionIndex > text_.size())
     {
@@ -30,7 +30,7 @@ void TextBuffer::insertSubstring(const std::string subString, const unsigned ins
 void TextBuffer::appendSubstring(const std::string subString)
 {
     const auto insertionPoint = text_.size();
-    insertSubstring(subString, static_cast<int>(insertionPoint));
+    insertSubstring(static_cast<int>(insertionPoint), subString);
 }
 void TextBuffer::eraseCharacters(const unsigned deletionIndex, const unsigned deletionLength)
 {
@@ -92,7 +92,7 @@ void TextBuffer::undo()
     {
         auto &patchToApply = patchesForUndo_.front();
         patchToApply->apply(text_);
-        patchesForRedo_.push_front(std::move(*patchesForUndo_.begin()));
+        patchesForRedo_.push_front(patchesForUndo_[0]->reverse());
         patchesForUndo_.pop_front();
     }
 }
@@ -103,7 +103,7 @@ void TextBuffer::redo()
     {
         auto &patchToApply = patchesForRedo_.front();
         patchToApply->apply(text_);
-        patchesForUndo_.push_front(std::move(*patchesForRedo_.begin()));
+        patchesForUndo_.push_front(patchesForRedo_[0]->reverse());
         patchesForRedo_.pop_front();
         checkAndMaintainBufferSize();
     }

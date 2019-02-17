@@ -25,7 +25,7 @@ class TextBuffer
         explicit TextBuffer(std::string fileName);
         //! \brief Inserts substring at the specified string index
         //! \throws length_error if index is out of bounds
-        void insertSubstring(std::string subString, unsigned insertionIndex);
+        void insertSubstring(const unsigned insertionIndex, const std::string subString);
         //! \brief Inserts substring at end of current string
         void appendSubstring(std::string subString);
         //! \brief Erase n characters starting from selected index
