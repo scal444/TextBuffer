@@ -6,17 +6,24 @@
 #ifndef TEXTBUFFER_TEXTBUFFER_H
 #define TEXTBUFFER_TEXTBUFFER_H
 
+#include "Patch.h"
+
 #include <deque>
 #include <memory>
 #include <string>
 
-#include "Patch.h"
 
-
+/*! \brief Text operation buffer
+ *
+ *  Wraps a std::string representation of a block of text. Allows for a subset of manipulations
+ *  on the string, and allows for a limited number of undo and redo operations.
+ *
+ *  Undos and redo's are implemented in terms of "patching" operations (see Patch.h)
+ */
 class TextBuffer
 {
     // FIXME This should be larger, and/or an optional parameter of the constructor.
-    // Using a constant for now to keep the requested interface
+    // Using a constant for now to keep the requested interface.
     static constexpr int maxBufferPatchNumber_ = 5;
 
     public:
@@ -25,12 +32,12 @@ class TextBuffer
         explicit TextBuffer(std::string fileName);
         //! \brief Inserts substring at the specified string index
         //! \throws length_error if index is out of bounds
-        void insertSubstring(const unsigned insertionIndex, const std::string subString);
+        void insertSubstring(unsigned insertionIndex, std::string subString);
         //! \brief Inserts substring at end of current string
         void appendSubstring(std::string subString);
         //! \brief Erase n characters starting from selected index
         //! Handles deletion lengths greater than the remaining string size
-        //! \throws lengtH_error if index is out of bounds
+        //! \throws length_error if index is out of bounds
         void eraseCharacters(unsigned deletionIndex, unsigned deletionLength);
         //! \brief Erase n characters from end of string.
         //! If the deletion length is greater than the string size, clears the string
@@ -54,6 +61,8 @@ class TextBuffer
         //! if undo buffer has reached maximum size.
         void checkAndMaintainBufferSize();
         std::string text_;
+        // redoing and undoing pops the front of the deque. When capacity is reached, the back of
+        // the deque is popped and the value there is discarded
         std::deque<std::unique_ptr<Patch>> patchesForUndo_;
         std::deque<std::unique_ptr<Patch>> patchesForRedo_;
 };

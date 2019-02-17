@@ -32,6 +32,7 @@ void TextBuffer::appendSubstring(const std::string subString)
     const auto insertionPoint = text_.size();
     insertSubstring(static_cast<int>(insertionPoint), subString);
 }
+
 void TextBuffer::eraseCharacters(const unsigned deletionIndex, const unsigned deletionLength)
 {
     if (deletionIndex > text_.size())
@@ -42,8 +43,11 @@ void TextBuffer::eraseCharacters(const unsigned deletionIndex, const unsigned de
     stringutil::deleteCharacters(text_, deletionIndex, deletionLength);
     auto patch = std::make_unique<InsertionPatch>(deletionIndex, textToErase);
     patchesForUndo_.push_front(std::move(patch));
+    checkAndMaintainBufferSize();
 
 }
+
+// Clears string if entire text is erased, otherwise calls eraseCharacters
 void TextBuffer::eraseTrailingCharacters(const unsigned deletionLength)
 {
     if (deletionLength >= text_.size())
@@ -52,6 +56,7 @@ void TextBuffer::eraseTrailingCharacters(const unsigned deletionLength)
         text_.clear();
         auto patch = std::make_unique<InsertionPatch>(0, stringToDelete);
         patchesForUndo_.push_front(std::move(patch));
+        checkAndMaintainBufferSize();
     }
     else
     {
@@ -67,6 +72,7 @@ void TextBuffer::replaceSubstring(const std::string stringToBeReplaced,
         // For patch, do reverse replacement
         auto patch = std::make_unique<ReplacementPatch>(stringToReplaceWith, stringToBeReplaced);
         patchesForUndo_.push_front(std::move(patch));
+        checkAndMaintainBufferSize();
     }
 
 }
@@ -86,6 +92,7 @@ void TextBuffer::loadFromText(const std::string fileName)
     text_ = stringStream.str();
 }
 
+// Pops front of undo deque, adds reverse of patch to redo deque
 void TextBuffer::undo()
 {
     if (!patchesForUndo_.empty())
@@ -97,6 +104,7 @@ void TextBuffer::undo()
     }
 }
 
+// Pops front of redo deque, adds reverse of patch to undo deque
 void TextBuffer::redo()
 {
     if (!patchesForRedo_.empty())

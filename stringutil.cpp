@@ -1,6 +1,4 @@
-//
-// Created by kevin on 2/17/19.
-//
+//! Implements functionality defined in stringutil.h
 
 #include "stringutil.h"
 

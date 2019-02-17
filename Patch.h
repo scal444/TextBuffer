@@ -10,15 +10,27 @@
 
 #include "stringutil.h"
 
+/*! /brief Base class for patch operations on TextBuffer
+ *
+ *  Patches contain state information that allow them to apply an operation
+ *  to a string.
+ *
+ *  Each patch has a corresponding "reverse" patch that undoes the operation
+ */
 class Patch
 {
 public:
     Patch() = default;
     virtual ~Patch() = default;
+    //! \brief apply operation to string
     virtual void apply(std::string& stringToPatch) = 0;
+    //! \brief Creates patch that will exactly undo this patches operation
     virtual std::unique_ptr<Patch> reverse() const = 0;
 };
 
+//! \brief Patch inserts a substring at a location
+//!
+//! The reverse of this patch is a deletion
 class InsertionPatch : public Patch
 {
 public:
@@ -30,6 +42,7 @@ public:
     {
         stringutil::insertCharacters(stringToPatch, insertionIndex_, insertionSubstring_);
     }
+    // Defined further down when DeletionPatch is defined
     std::unique_ptr<Patch> reverse() const override;
 
 private:
@@ -37,6 +50,9 @@ private:
     std::string insertionSubstring_;
 };
 
+//! \brief Patch deletes a number of characters starting at an index
+//!
+//! The reverse of this patch is an insertion.
 class DeletionPatch : public Patch
 {
 public:
@@ -60,6 +76,9 @@ private:
     unsigned nCharsToDelete_;
 };
 
+//! \brief Patch finds the first instance of a substring and replaces it with another substring
+//!
+//! The reverse of this patch is another ReplacementPatch with strings reversed
 class ReplacementPatch : public Patch
 {
 public:

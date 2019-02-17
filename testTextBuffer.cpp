@@ -28,7 +28,7 @@ static void removeFile(const std::string& referenceName)
 }
 
 // Loads contents of a file to a string
-// TODO this is duplicated in the TextBuffer class and should be in e.g. a stringutils header
+// TODO this should be a general testing utility (e.g. testutils.h)
 static std::string fileToString(const std::string& fileName)
 {
     std::ifstream fileStream(fileName);
@@ -112,13 +112,13 @@ TEST_CASE("TextBuffer insertion")
 
     SECTION("Inserts correctly")
     {
-        buffer.insertSubstring(" word3", 5);
+        buffer.insertSubstring(5, " word3");
         REQUIRE(buffer.getString() == "word1 word3 word2");
     }
 
     SECTION("Throws with invalid index")
     {
-        REQUIRE_THROWS_AS(buffer.insertSubstring("should throw", 30), std::length_error);
+        REQUIRE_THROWS_AS(buffer.insertSubstring(30, "should throw"), std::length_error);
     }
 }
 
@@ -180,46 +180,85 @@ TEST_CASE("TextBuffer buffering operations work")
 
     SECTION("Undo, redo insert")
     {
-
+        buffer.insertSubstring(0, "string4 ");
+        buffer.undo();
+        REQUIRE(buffer.getString() == initString);
+        buffer.redo();
+        REQUIRE(buffer.getString() == "string4 string1 string2 string3");
     }
 
     SECTION("Undo, redo delete from index")
     {
-
+        buffer.eraseCharacters(8, 8);
+        buffer.undo();
+        REQUIRE(buffer.getString() == initString);
+        buffer.redo();
+        REQUIRE(buffer.getString() == "string1 string3");
     }
 
     SECTION("Undo, redo delete from end")
     {
-
+        buffer.eraseTrailingCharacters(8);
+        buffer.undo();
+        REQUIRE(buffer.getString() == initString);
+        buffer.redo();
+        REQUIRE(buffer.getString() == "string1 string2");
     }
 
     SECTION("Undo, redo substring replacement")
     {
-
+        buffer.replaceSubstring("string2", "string4");
+        buffer.undo();
+        REQUIRE(buffer.getString() == initString);
+        buffer.redo();
+        REQUIRE(buffer.getString() == "string1 string4 string3");
     }
 }
 
 TEST_CASE("undo and redo combinations")
 {
-    SECTION("Disallow empty redo")
+    std::string initString = "string1 string2 string3";
+    auto buffer = genTextBuffer(initString);
+    SECTION("Handle empty redo")
     {
-
+        REQUIRE_NOTHROW(buffer.undo());
+        REQUIRE(buffer.getString() == initString);
     }
 
-    SECTION("Undo, undo, redo")
+    SECTION("Handle empty undo")
     {
-
+        REQUIRE_NOTHROW(buffer.redo());
+        REQUIRE(buffer.getString() == initString);
     }
 
-    SECTION("Undo")
+    SECTION("Chaining undos and redos")
+    {
+        buffer.appendSubstring(" string4");
+        buffer.eraseCharacters(0, 8);
+        REQUIRE(buffer.getString() == "string2 string3 string4");
+        buffer.undo();
+        REQUIRE(buffer.getString() == "string1 string2 string3 string4");
+        buffer.redo();
+        REQUIRE(buffer.getString() == "string2 string3 string4");
+        buffer.undo();
+        REQUIRE(buffer.getString() == "string1 string2 string3 string4");
+        buffer.undo();
+        REQUIRE(buffer.getString() == initString);
+    }
 
     SECTION("Reached max undos")
     {
+        for (unsigned i = 0; i < 10; i++)
+        {
+            buffer.eraseTrailingCharacters(1);
+        }
+        // In our implementation, max buffer size is 5, so only 5 undos should happen
+        for (unsigned i = 0; i < 10; i++)
+        {
+            buffer.undo();
+        }
+        REQUIRE(buffer.getString() == "string1 string2 st");
 
     }
 
-    SECTION("Reached max redos")
-    {
-
-    }
 }

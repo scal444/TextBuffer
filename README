@@ -1,0 +1,31 @@
+The contents of this folder contain an implementation of a simple text buffer and related utilities/text.
+Written by Kevin Boyd (kevin.boyd@uconn.edu)
+
+----------------
+Manifest
+----------------
+TextBuffer.h/.cpp   - definition and implementation of main text buffer class
+stringutil.h/.cpp   - utilities for manipulating std::strings
+testTextBuffer.cpp  - unit tests for text buffer class
+Patch.h             - patch objects used to implement redo/undo buffering
+exampleUsage.cpp    - demo of text buffer capabilities
+catch.hpp           - copy of Catch2 - an open source C++ unit test library used for unit tests. Found at:
+                      https://github.com/catchorg/Catch2
+CMakeLists.txt      - CMake build info
+
+------------------
+Build instructions
+------------------
+
+This program is built with cmake (v >= 3.10) and make. A C++ 14 compatible C++ compiler is required.
+
+Sample build instructions
+
+# builds the example executable
+mkdir build
+cd build
+cmake ..
+# builds the executable example
+make
+# builds and runs the unit tests
+make && make test
