@@ -1,68 +1,11 @@
 // implements functionality declared in TextBuffer.h
 
 #include "TextBuffer.h"
-
+#include "stringutil.h"
 #include <deque>
 #include <fstream>
 #include <sstream>
-
-class Patch
-{
-    public:
-        Patch() = default;
-        virtual ~Patch() = default;
-        virtual void apply(std::string& stringToPatch) = 0;
-};
-
-class InsertionPatch : public Patch
-{
-    public:
-        InsertionPatch(unsigned insertionIndex, std::string&& insertionSubstring)
-            : insertionIndex_(insertionIndex), insertionSubstring_(insertionSubstring)
-        {}
-        InsertionPatch(const InsertionPatch& rhs) = default;
-        void apply(std::string& stringToPatch) override
-        {
-
-        }
-    private:
-        unsigned insertionIndex_;
-        std::string insertionSubstring_;
-};
-
-class DeletionPatch : public Patch
-{
-    public:
-        DeletionPatch(unsigned deletionIndex, unsigned nCharsToDelete)
-            : deletionIndex_(deletionIndex), nCharsToDelete_(nCharsToDelete)
-        {}
-        DeletionPatch(const DeletionPatch& rhs) = default;
-        void apply(std::string& stringToPatch) override
-        {
-            stringToPatch.erase(deletionIndex_, nCharsToDelete_);
-        }
-    private:
-        unsigned deletionIndex_;
-        unsigned nCharsToDelete_;
-};
-
-class ReplacementPatch : public Patch
-{
-    public:
-        ReplacementPatch(std::string substringToBeReplaced, std::string substringToReplaceWith)
-            : substringToBeReplaced_(substringToBeReplaced), substringToReplaceWith_(substringToReplaceWith)
-        {}
-        ReplacementPatch(const ReplacementPatch& rhs) = default;
-        void apply(std::string& stringToPatch) override
-        {
-
-        }
-    private:
-        std::string substringToBeReplaced_;
-        std::string substringToReplaceWith_;
-};
-
-
+#include <stdexcept>
 
 
 
@@ -73,22 +16,42 @@ TextBuffer::TextBuffer(const std::string fileName)
 
 void TextBuffer::insertSubstring(const std::string subString, const unsigned insertionIndex)
 {
-    text_.insert(insertionIndex, subString);
+    if (insertionIndex > text_.size())
+    {
+        throw std::length_error("Attempted to insert past index bounds");
+    }
+    stringutil::insertCharacters(text_, insertionIndex, subString);
+    auto patch = std::make_unique<DeletionPatch>(insertionIndex, subString.size());
+    patchesForUndo_.push_front(std::move(patch));
+    checkAndMaintainBufferSize();
 }
 
+// Implemented in terms of insertSubstring to avoid duplication
 void TextBuffer::appendSubstring(const std::string subString)
 {
-    text_.insert(text_.size(), subString);
+    const auto insertionPoint = text_.size();
+    insertSubstring(subString, static_cast<int>(insertionPoint));
 }
 void TextBuffer::eraseCharacters(const unsigned deletionIndex, const unsigned deletionLength)
 {
-    text_.erase(deletionIndex, deletionLength);
+    if (deletionIndex > text_.size())
+    {
+        throw std::length_error("Attempted to delete past index bounds");
+    }
+    const auto textToErase = text_.substr(deletionIndex, deletionLength);
+    stringutil::deleteCharacters(text_, deletionIndex, deletionLength);
+    auto patch = std::make_unique<InsertionPatch>(deletionIndex, textToErase);
+    patchesForUndo_.push_front(std::move(patch));
+
 }
 void TextBuffer::eraseTrailingCharacters(const unsigned deletionLength)
 {
     if (deletionLength >= text_.size())
     {
+        auto stringToDelete = text_;
         text_.clear();
+        auto patch = std::make_unique<InsertionPatch>(0, stringToDelete);
+        patchesForUndo_.push_front(std::move(patch));
     }
     else
     {
@@ -98,11 +61,12 @@ void TextBuffer::eraseTrailingCharacters(const unsigned deletionLength)
 void TextBuffer::replaceSubstring(const std::string stringToBeReplaced,
                                   const std::string stringToReplaceWith)
 {
-    auto subStringPosition = static_cast<unsigned>(text_.find(stringToBeReplaced));
+    auto subStringPosition = stringutil::replaceSubstring(text_, stringToBeReplaced, stringToReplaceWith);
     if (subStringPosition > 0)
     {
-        eraseCharacters(subStringPosition, static_cast<unsigned>(stringToBeReplaced.size()));
-        insertSubstring(stringToReplaceWith, subStringPosition);
+        // For patch, do reverse replacement
+        auto patch = std::make_unique<ReplacementPatch>(stringToReplaceWith, stringToBeReplaced);
+        patchesForUndo_.push_front(std::move(patch));
     }
 
 }
@@ -124,10 +88,31 @@ void TextBuffer::loadFromText(const std::string fileName)
 
 void TextBuffer::undo()
 {
-
+    if (!patchesForUndo_.empty())
+    {
+        auto &patchToApply = patchesForUndo_.front();
+        patchToApply->apply(text_);
+        patchesForRedo_.push_front(std::move(*patchesForUndo_.begin()));
+        patchesForUndo_.pop_front();
+    }
 }
 
 void TextBuffer::redo()
 {
+    if (!patchesForRedo_.empty())
+    {
+        auto &patchToApply = patchesForRedo_.front();
+        patchToApply->apply(text_);
+        patchesForUndo_.push_front(std::move(*patchesForRedo_.begin()));
+        patchesForRedo_.pop_front();
+        checkAndMaintainBufferSize();
+    }
+}
 
+void TextBuffer::checkAndMaintainBufferSize()
+{
+    if (patchesForUndo_.size() > maxBufferPatchNumber_)
+    {
+        patchesForUndo_.pop_back();
+    }
 }

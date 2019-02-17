@@ -7,9 +7,11 @@
 #define TEXTBUFFER_TEXTBUFFER_H
 
 #include <deque>
+#include <memory>
 #include <string>
 
-class Patch;
+#include "Patch.h"
+
 
 class TextBuffer
 {
@@ -22,11 +24,13 @@ class TextBuffer
         //! \brief Load text from file
         explicit TextBuffer(std::string fileName);
         //! \brief Inserts substring at the specified string index
+        //! \throws length_error if index is out of bounds
         void insertSubstring(std::string subString, unsigned insertionIndex);
         //! \brief Inserts substring at end of current string
         void appendSubstring(std::string subString);
         //! \brief Erase n characters starting from selected index
         //! Handles deletion lengths greater than the remaining string size
+        //! \throws lengtH_error if index is out of bounds
         void eraseCharacters(unsigned deletionIndex, unsigned deletionLength);
         //! \brief Erase n characters from end of string.
         //! If the deletion length is greater than the string size, clears the string
@@ -39,16 +43,19 @@ class TextBuffer
         void saveToText(std::string fileName);
         //! Loads string from text file. Replaces current string
         void loadFromText(std::string fileName);
-        //! \brief Undo last operation
+        //! \brief Undo last operation. Does nothing if no operations are in the undo buffer
         void undo();
-        //! \brief Redo last undone operation
+        //! \brief Redo last undone operation. Does nothing of no operations are in the redo buffer
         void redo();
-        //! \brief Get copy of text buffer
+        //! \brief Get copy of text
         std::string getString() const {return text_;};
     private:
+        //! \Brief Prevent deques from overflowing maximum size by popping off the least recent patch
+        //! if undo buffer has reached maximum size.
+        void checkAndMaintainBufferSize();
         std::string text_;
-        std::deque<Patch *> patchesForUndo_;
-        std::deque<Patch *> patchesForRedo_;
+        std::deque<std::unique_ptr<Patch>> patchesForUndo_;
+        std::deque<std::unique_ptr<Patch>> patchesForRedo_;
 };
 
 #endif //TEXTBUFFER_TEXTBUFFER_H

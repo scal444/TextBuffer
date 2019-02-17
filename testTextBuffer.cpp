@@ -74,6 +74,11 @@ TEST_CASE("TextBuffer loads")
         buffer.loadFromText(loadFilePath);
         REQUIRE(buffer.getString() == referenceString);
     }
+
+    SECTION("Throws on failed load")
+    {
+
+    }
     removeFile(loadFilePath);
 }
 
@@ -104,8 +109,17 @@ TEST_CASE("Textbuffer appending")
 TEST_CASE("TextBuffer insertion")
 {
     auto buffer = genTextBuffer("word1 word2");
-    buffer.insertSubstring(" word3", 5);
-    REQUIRE(buffer.getString() == "word1 word3 word2");
+
+    SECTION("Inserts correctly")
+    {
+        buffer.insertSubstring(" word3", 5);
+        REQUIRE(buffer.getString() == "word1 word3 word2");
+    }
+
+    SECTION("Throws with invalid index")
+    {
+        REQUIRE_THROWS_AS(buffer.insertSubstring("should throw", 30), std::length_error);
+    }
 }
 
 TEST_CASE("TextBuffer deleting")
@@ -114,7 +128,7 @@ TEST_CASE("TextBuffer deleting")
 
     SECTION("Delete from end")
     {
-        buffer.eraseTrailingCharacters(5);
+        buffer.eraseTrailingCharacters(6);
         REQUIRE(buffer.getString() == "word1");
     }
 
@@ -126,16 +140,86 @@ TEST_CASE("TextBuffer deleting")
 
     SECTION("Delete past 0")
     {
+        buffer.eraseCharacters(5, 10);
+        REQUIRE(buffer.getString() == "word1");
+    }
+
+
+    SECTION("Throw with incorrect index")
+    {
+        REQUIRE_THROWS_AS(buffer.eraseCharacters(30, 5), std::length_error);
+    }
+
+    SECTION("Delete entire string")
+    {
+        buffer.eraseTrailingCharacters(20);
+        REQUIRE(buffer.getString().empty());
+    }
+}
+
+TEST_CASE("TextBuffer substring replace")
+{
+    auto buffer = genTextBuffer("string1 string2 string3");
+    buffer.replaceSubstring("string2", "replacedstring");
+    REQUIRE(buffer.getString() == "string1 replacedstring string3");
+}
+
+
+TEST_CASE("TextBuffer buffering operations work")
+{
+    std::string initString = "string1 string2 string3";
+    auto buffer = genTextBuffer(initString);
+    SECTION("Undo, redo append")
+    {
+        buffer.appendSubstring(" string4");
+        buffer.undo();
+        REQUIRE(buffer.getString() == initString);
+        buffer.redo();
+        REQUIRE(buffer.getString() == "string1 string2 string3 string4");
+    }
+
+    SECTION("Undo, redo insert")
+    {
+
+    }
+
+    SECTION("Undo, redo delete from index")
+    {
+
+    }
+
+    SECTION("Undo, redo delete from end")
+    {
+
+    }
+
+    SECTION("Undo, redo substring replacement")
+    {
 
     }
 }
 
-TEST_CASE("TextBuffer basic operations")
+TEST_CASE("undo and redo combinations")
 {
+    SECTION("Disallow empty redo")
+    {
 
-}
+    }
 
-TEST_CASE("TextBuffer buffering operations")
-{
+    SECTION("Undo, undo, redo")
+    {
 
+    }
+
+    SECTION("Undo")
+
+    SECTION("Reached max undos")
+    {
+
+    }
+
+    SECTION("Reached max redos")
+    {
+
+    }
 }
